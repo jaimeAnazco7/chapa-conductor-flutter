@@ -40,7 +40,7 @@ jobs:
         run: mkdir -p app
 
       - name: Copy APP to directory
-        run: cp -r build/ios/Debug-iphoneos/Runner.app app/
+        run: cp -r build/ios/iphonesimulator/Runner.app app/
 
       - name: Zip APP output for Appetize
         run: zip -qq -r -9 FlutterAppForAppetize.zip app/
