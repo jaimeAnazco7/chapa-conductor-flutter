@@ -1,11 +1,11 @@
-name: iOS-ipa-build
+name: iOS-ipa-and-app-build
 
 on:
   workflow_dispatch:
 
 jobs:
   build-ios:
-    name: 🎉 iOS Build
+    name: 🎉 iOS Build (IPA + APP)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,12 +14,13 @@ jobs:
         with:
           channel: 'stable'
           architecture: x64
+      
       - run: flutter pub get
       
-
       - run: pod repo update
         working-directory: ios
 
+      # Build para IPA (dispositivos físicos)
       - run: flutter build ios --release --no-codesign
 
       - run: mkdir Payload
@@ -28,15 +29,36 @@ jobs:
       - run: mv Runner.app/ Payload
         working-directory: build/ios/iphoneos
 
-      - name: Zip output
+      - name: Zip IPA output
         run: zip -qq -r -9 FlutterIpaExport.ipa Payload
         working-directory: build/ios/iphoneos
 
-      - name: Upload binaries to release
+      # Build para APP (simulador iOS - Appetize.io)
+      - run: flutter build ios --simulator
+
+      - name: Create APP directory
+        run: mkdir -p app
+
+      - name: Copy APP to directory
+        run: cp -r build/ios/Debug-iphoneos/Runner.app app/
+
+      - name: Zip APP output for Appetize
+        run: zip -qq -r -9 FlutterAppForAppetize.zip app/
+
+      - name: Upload IPA to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: build/ios/iphoneos/FlutterIpaExport.ipa
           tag: v1.0
           overwrite: true
-          body: "This is first release"
+          body: "iOS IPA + APP for Appetize.io"
+
+      - name: Upload APP to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: FlutterAppForAppetize.zip
+          tag: v1.0-app
+          overwrite: true
+          body: "iOS APP for Appetize.io simulator"
